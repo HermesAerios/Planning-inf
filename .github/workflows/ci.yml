@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test_tours
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run Pytest
+      env:
+        DATABASE_URL: postgresql://user:password@localhost:5432/test_tours
+        REDIS_URL: redis://localhost:6379/
+        JWT_SECRET: supersecret
+        ORS_API_KEY: fake-key
+      run: |
+        pytest
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    - name: Install dependencies
+      run: npm ci
+    - name: Build
+      run: npm run build
+
+  docker-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Backend
+      run: docker build ./backend -t backend-test
+    - name: Build Frontend
+      run: docker build ./frontend -t frontend-test
+    - name: Build Nginx
+      run: docker build ./nginx -t nginx-test

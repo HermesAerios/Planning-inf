@@ -1,0 +1,22 @@
+# Multi-stage Dockerfile for Frontend Production Build
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci --prefer-offline --no-audit
+
+COPY . .
+
+RUN npm run build
+
+# Production Server Stage
+FROM nginx:alpine
+
+# Copy custom nginx config for SPA routing if needed
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
