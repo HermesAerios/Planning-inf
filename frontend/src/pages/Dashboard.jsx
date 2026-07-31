@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { toast } from 'react-toastify';
 import {
     Users,
     Calendar,
@@ -10,18 +11,9 @@ import {
     UserX
 } from 'lucide-react';
 
-const MOCK_STATS = {
-    active_patients: 42,
-    tours_today: 6,
-    tours_week: 38,
-    alerts: [
-        { type: 'info', message: 'Bienvenue en mode démonstration. Toutes les fonctionnalités de l\'interface sont actives.' }
-    ]
-};
-
 export default function Dashboard() {
-    const [stats, setStats] = useState(MOCK_STATS);
-    const [loading, setLoading] = useState(false);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchStats();
@@ -30,13 +22,30 @@ export default function Dashboard() {
     const fetchStats = async () => {
         try {
             const res = await api.get('/dashboard/stats');
-            if (res.data && typeof res.data === 'object' && res.data.active_patients !== undefined) {
-                setStats(res.data);
-            }
+            setStats(res.data);
         } catch (e) {
-            console.warn('Backend API offline, keeping demo data.');
+            console.error('Erreur chargement stats:', e);
+            toast.error('Erreur de connexion au serveur backend.');
+        } finally {
+            setLoading(false);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    if (!stats) {
+        return (
+            <div className="p-8 text-center text-gray-500">
+                <p>Impossible de charger les statistiques du tableau de bord. Vérifiez la connexion au serveur API.</p>
+            </div>
+        );
+    }
 
     const StatCard = ({ title, value, icon, color, subtext }) => (
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-slate-800 transition-colors duration-200">
@@ -55,7 +64,7 @@ export default function Dashboard() {
         <div className="p-6 max-w-7xl mx-auto space-y-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tableau de Bord</h1>
-                <p className="text-gray-500 dark:text-gray-400">Vue d'ensemble de l'activité (Mode Démo)</p>
+                <p className="text-gray-500 dark:text-gray-400">Vue d'ensemble de l'activité</p>
             </div>
 
             {/* Stats Grid */}

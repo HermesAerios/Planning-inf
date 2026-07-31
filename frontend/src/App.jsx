@@ -30,10 +30,16 @@ const PageLoader = () => (
 
 import InstallPWA from './components/common/InstallPWA';
 
-// ... (keep routes as is, just updating the Layout import)
+// Protected Route wrapper
+const ProtectedRoute = ({ roles }) => {
+    const { user } = useAuth();
+    if (!user) return <Navigate to="/login" replace />;
 
-// Protected Route wrapper (Bypassed for test mode)
-const ProtectedRoute = () => {
+    if (roles && !roles.includes(user.role)) {
+        if (user.role === 'infirmier') return <Navigate to="/tournee" replace />;
+        return <Navigate to="/login" replace />;
+    }
+
     return <Outlet />;
 };
 
@@ -45,12 +51,11 @@ function App() {
                     <Router>
                         <Suspense fallback={<PageLoader />}>
                             <Routes>
-                                {/* Redirect login directly to dashboard */}
-                                <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+                                <Route path="/login" element={<Login />} />
 
                                 {/* Desktop / Admin Routes */}
                                 <Route element={<Layout />}>
-                                    <Route element={<ProtectedRoute />}>
+                                    <Route element={<ProtectedRoute roles={['admin', 'planificateur']} />}>
                                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                                         <Route path="/dashboard" element={<Dashboard />} />
                                         <Route path="/patients" element={<Patients />} />
@@ -58,6 +63,10 @@ function App() {
                                         <Route path="/users" element={<Users />} />
                                         <Route path="/tournees" element={<AllTournees />} />
                                         <Route path="/settings" element={<Settings />} />
+                                    </Route>
+
+                                    {/* Nurse Routes */}
+                                    <Route element={<ProtectedRoute roles={['infirmier', 'admin']} />}>
                                         <Route path="/tournee" element={<NurseTournee />} />
                                     </Route>
                                 </Route>
