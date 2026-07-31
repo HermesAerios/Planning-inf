@@ -32,29 +32,10 @@ import InstallPWA from './components/common/InstallPWA';
 
 // ... (keep routes as is, just updating the Layout import)
 
-// Protected Route wrapper
-const ProtectedRoute = ({ roles }) => {
-    const { user } = useAuth();
-    if (!user) return <Navigate to="/login" replace />;
-
-    // Debug logging
-    console.log('ProtectedRoute:', { userRole: user.role, allowedRoles: roles });
-
-    // Redirect logic for wrong role
-    if (roles && !roles.includes(user.role)) {
-        console.warn('Access denied. Redirecting...');
-        // If nurse tries to access admin page, send to tournee
-        if (user.role === 'infirmier') return <Navigate to="/tournee" replace />;
-        // Default fallback to login to avoid loops if / redirects to here
-        return <Navigate to="/login" replace />;
-    }
-
+// Protected Route wrapper (Bypassed for test mode)
+const ProtectedRoute = () => {
     return <Outlet />;
 };
-
-
-
-// ... other imports ...
 
 function App() {
     return (
@@ -64,22 +45,19 @@ function App() {
                     <Router>
                         <Suspense fallback={<PageLoader />}>
                             <Routes>
-                                <Route path="/login" element={<Login />} />
+                                {/* Redirect login directly to dashboard */}
+                                <Route path="/login" element={<Navigate to="/dashboard" replace />} />
 
                                 {/* Desktop / Admin Routes */}
                                 <Route element={<Layout />}>
-                                    <Route element={<ProtectedRoute roles={['admin', 'planificateur']} />}>
-                                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                                    <Route element={<ProtectedRoute />}>
+                                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
                                         <Route path="/dashboard" element={<Dashboard />} />
                                         <Route path="/patients" element={<Patients />} />
                                         <Route path="/optimisation" element={<Optimisation />} />
                                         <Route path="/users" element={<Users />} />
                                         <Route path="/tournees" element={<AllTournees />} />
                                         <Route path="/settings" element={<Settings />} />
-                                    </Route>
-
-                                    {/* Nurse Routes - Mobile optimized but accessible inside layout for now or separate */}
-                                    <Route element={<ProtectedRoute roles={['infirmier', 'admin']} />}>
                                         <Route path="/tournee" element={<NurseTournee />} />
                                     </Route>
                                 </Route>
