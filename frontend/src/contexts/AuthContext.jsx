@@ -1,74 +1,36 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import axios from 'axios';
+import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
+// Mock user for testing without login requirement
+const MOCK_ADMIN_USER = {
+    id: 1,
+    username: "admin",
+    name: "Administrateur (Mode Test)",
+    role: "admin"
+};
+
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(MOCK_ADMIN_USER);
+    const [token, setToken] = useState("mock-test-token");
+    const [loading, setLoading] = useState(false);
 
-    // Configure axios defaults
-    if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Need to set base URL from env
-    axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-    useEffect(() => {
-        checkUser();
-    }, [token]);
-
-    const checkUser = async () => {
-        if (!token) {
-            setUser(null);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const res = await axios.get('/auth/me');
-            setUser(res.data);
-        } catch (error) {
-            console.error("Auth check failed", error);
-            logout();
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const login = async (username, password) => {
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('password', password);
-
-        const res = await axios.post('/auth/login', formData);
-        const { access_token } = res.data;
-
-        localStorage.setItem('token', access_token);
-        setToken(access_token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-
-        // Fetch user immediately
-        const userRes = await axios.get('/auth/me');
-        setUser(userRes.data);
-
+    const login = async () => {
+        setUser(MOCK_ADMIN_USER);
+        setToken("mock-test-token");
         return true;
     };
 
     const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-        delete axios.defaults.headers.common['Authorization'];
+        // Keep mock user so test mode doesn't lock out
+        setUser(MOCK_ADMIN_USER);
     };
 
     return (
         <AuthContext.Provider value={{ user, token, login, logout, loading }}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };
