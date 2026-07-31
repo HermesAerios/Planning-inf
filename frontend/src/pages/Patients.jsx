@@ -7,8 +7,14 @@ import PatientForm from '../components/patient/PatientForm';
 import { clsx } from 'clsx';
 
 export default function Patients() {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const MOCK_PATIENTS = [
+        { id: 1, nom: "Dupont", prenom: "Jean", adresse: "12 Rue de la Paix, Paris", telephone: "0612345678", is_active: true, actes: [{ code_acte: "PDS", libelle: "Prise de sang" }] },
+        { id: 2, nom: "Martin", prenom: "Sophie", adresse: "45 Avenue Victor Hugo, Paris", telephone: "0698765432", is_active: true, actes: [{ code_acte: "INJ", libelle: "Injection Insulinique" }] },
+        { id: 3, nom: "Bernard", prenom: "Pierre", adresse: "8 Boulevard Saint-Germain, Paris", telephone: "0655443322", is_active: true, actes: [{ code_acte: "TLT", libelle: "Toilette quotidienne" }] }
+    ];
+
+    const [data, setData] = useState(MOCK_PATIENTS);
+    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [showInactive, setShowInactive] = useState(false);
 
@@ -31,24 +37,18 @@ export default function Patients() {
         fetchPatients();
     }, [showInactive]); // Refetch when filter changes
 
-    const MOCK_PATIENTS = [
-        { id: 1, nom: "Dupont", prenom: "Jean", adresse: "12 Rue de la Paix, Paris", telephone: "0612345678", is_active: true, actes: [{ code_acte: "PDS", libelle: "Prise de sang" }] },
-        { id: 2, nom: "Martin", prenom: "Sophie", adresse: "45 Avenue Victor Hugo, Paris", telephone: "0698765432", is_active: true, actes: [{ code_acte: "INJ", libelle: "Injection Insulinique" }] },
-        { id: 3, nom: "Bernard", prenom: "Pierre", adresse: "8 Boulevard Saint-Germain, Paris", telephone: "0655443322", is_active: true, actes: [{ code_acte: "TLT", libelle: "Toilette quotidienne" }] }
-    ];
-
     const fetchPatients = async (query = '') => {
-        setLoading(true);
         try {
             const params = {
                 search: query || search,
                 filter_active: !showInactive
             };
             const res = await api.get('/patients/', { params });
-            setData(res.data);
+            if (Array.isArray(res.data) && res.data.length > 0) {
+                setData(res.data);
+            }
         } catch (err) {
-            console.error('Backend API unreachable, using mock patients:', err);
-            setData(MOCK_PATIENTS);
+            console.warn('Backend API unreachable, using mock patients data.');
         } finally {
             setLoading(false);
         }

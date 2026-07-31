@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { toast } from 'react-toastify';
 import {
     Users,
     Calendar,
@@ -11,44 +10,33 @@ import {
     UserX
 } from 'lucide-react';
 
+const MOCK_STATS = {
+    active_patients: 42,
+    tours_today: 6,
+    tours_week: 38,
+    alerts: [
+        { type: 'info', message: 'Bienvenue en mode démonstration. Toutes les fonctionnalités de l\'interface sont actives.' }
+    ]
+};
+
 export default function Dashboard() {
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState(MOCK_STATS);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchStats();
     }, []);
 
-    const MOCK_STATS = {
-        active_patients: 42,
-        tours_today: 6,
-        tours_week: 38,
-        alerts: [
-            { type: 'info', message: 'Bienvenue en mode démonstration. Toutes les fonctionnalités de l\'interface sont actives.' }
-        ]
-    };
-
     const fetchStats = async () => {
         try {
             const res = await api.get('/dashboard/stats');
-            setStats(res.data);
+            if (res.data && typeof res.data === 'object' && res.data.active_patients !== undefined) {
+                setStats(res.data);
+            }
         } catch (e) {
-            console.error('Backend API unreachable, using mock demo data:', e);
-            setStats(MOCK_STATS);
-        } finally {
-            setLoading(false);
+            console.warn('Backend API offline, keeping demo data.');
         }
     };
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
-    if (!stats) return null;
 
     const StatCard = ({ title, value, icon, color, subtext }) => (
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-slate-800 transition-colors duration-200">
@@ -67,7 +55,7 @@ export default function Dashboard() {
         <div className="p-6 max-w-7xl mx-auto space-y-8">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Tableau de Bord</h1>
-                <p className="text-gray-500 dark:text-gray-400">Vue d'ensemble de l'activité</p>
+                <p className="text-gray-500 dark:text-gray-400">Vue d'ensemble de l'activité (Mode Démo)</p>
             </div>
 
             {/* Stats Grid */}
@@ -101,7 +89,7 @@ export default function Dashboard() {
                     </h2>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-slate-800">
-                    {stats.alerts.length === 0 ? (
+                    {!stats.alerts || stats.alerts.length === 0 ? (
                         <div className="p-8 text-center text-gray-500 dark:text-gray-400 flex flex-col items-center gap-3">
                             <CheckCircle size={48} className="text-green-400 dark:text-green-500" />
                             <p>Aucune alerte en cours. Tout est sous contrôle !</p>
