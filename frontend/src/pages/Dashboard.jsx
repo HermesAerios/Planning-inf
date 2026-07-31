@@ -19,13 +19,22 @@ export default function Dashboard() {
         fetchStats();
     }, []);
 
+    const MOCK_STATS = {
+        active_patients: 42,
+        tours_today: 6,
+        tours_week: 38,
+        alerts: [
+            { type: 'info', message: 'Bienvenue en mode démonstration. Toutes les fonctionnalités de l\'interface sont actives.' }
+        ]
+    };
+
     const fetchStats = async () => {
         try {
             const res = await api.get('/dashboard/stats');
             setStats(res.data);
         } catch (e) {
-            console.error(e);
-            toast.error('Erreur chargement dashboard');
+            console.error('Backend API unreachable, using mock demo data:', e);
+            setStats(MOCK_STATS);
         } finally {
             setLoading(false);
         }
