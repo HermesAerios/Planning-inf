@@ -26,24 +26,17 @@ export default function Login() {
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
-            await login(data.username, data.password);
+            const loggedUser = await login(data.username, data.password);
             toast.success('Connexion réussie');
 
-            // Redirect based on role
-            // We need to decode token or get user info. 
-            // Since login updates context async, we might not have user user right away in the component state
-            // But login returns true.
-            // Let's rely on a hardcoded check or fetch user. 
-            // Better: useAuth's login should ideally return the user ROLE or we explicitly fetch it here.
-            // But simple heuristic:
-            if (data.username.includes('infirmier')) {
-                navigate('/tournee');
+            if (loggedUser && loggedUser.role === 'infirmier') {
+                navigate('/tournee', { replace: true });
             } else {
-                navigate('/dashboard');
+                navigate('/dashboard', { replace: true });
             }
         } catch (error) {
-            console.error(error);
-            toast.error("Échec de la connexion. Vérifiez vos identifiants.");
+            console.error('Login Error:', error);
+            toast.error(error.message || "Échec de la connexion. Vérifiez vos identifiants.");
         } finally {
             setIsLoading(false);
         }
