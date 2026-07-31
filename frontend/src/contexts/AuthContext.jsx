@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from 'axios';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -9,14 +9,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
-
-    // Configure axios defaults
-    if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Need to set base URL from env
-    axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
     useEffect(() => {
         checkUser();
@@ -30,7 +22,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            const res = await axios.get('/auth/me');
+            const res = await api.get('/auth/me');
             setUser(res.data);
         } catch (error) {
             console.error("Auth check failed", error);
@@ -45,15 +37,14 @@ export const AuthProvider = ({ children }) => {
         formData.append('username', username);
         formData.append('password', password);
 
-        const res = await axios.post('/auth/login', formData);
+        const res = await api.post('/auth/login', formData);
         const { access_token } = res.data;
 
         localStorage.setItem('token', access_token);
         setToken(access_token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
 
         // Fetch user immediately
-        const userRes = await axios.get('/auth/me');
+        const userRes = await api.get('/auth/me');
         setUser(userRes.data);
 
         return true;
@@ -63,7 +54,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
-        delete axios.defaults.headers.common['Authorization'];
     };
 
     return (
